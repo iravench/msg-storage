@@ -25,6 +25,9 @@ down:
 	docker rm -f $(MYSQL_NAME)
 redis_logs:
 	docker logs $(REDIS_NAME)
+redis_cli:
+	docker run -it --link $(REDIS_NAME):redis --rm redis:alpine \
+	  redis-cli -h redis -p 6379
 mysql_logs:
 	docker logs $(MYSQL_NAME)
 mysql_shell:
