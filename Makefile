@@ -1,5 +1,6 @@
 REDIS_NAME        ?= msg-storage-redis
 MYSQL_NAME        ?= msg-storage-mysql
+AMQP_NAME         ?= msg-storage-rabbit
 
 INIT_SQL=$(shell cat init.sql)
 
@@ -12,17 +13,29 @@ all:
 	@echo "  * mysql_init - run initial scripts to create mysql msg db"
 	@echo "  * mysql_cli  - enter the mysql command line interface"
 up:
-	docker run -d -p 6379:6379 --name $(REDIS_NAME) \
+	docker run -d -p 6379:6379 \
+	  --name $(REDIS_NAME) \
+	  --hostname $(REDIS_NAME) \
 	  redis:alpine
-	docker run -d -p 3306:3306 --name $(MYSQL_NAME) \
+	docker run -d -p 3306:3306 \
+	  --name $(MYSQL_NAME) \
+	  --hostname $(MYSQL_NAME) \
 	  -e MYSQL_ROOT_PASSWORD=pink5678 \
 	  -e MYSQL_DATABASE=bex-msg \
 	  -e MYSQL_USER=pink \
 	  -e MYSQL_PASSWORD=5678 \
 	  mysql:latest
+	docker run -d -p 15672:15672 \
+	  --name $(AMQP_NAME) \
+	  --hostname $(AMQP_NAME) \
+	  -e RABBITMQ_ERLANG_COOKIE='pink5678' \
+	  -e RABBITMQ_DEFAULT_USER=guest \
+	  -e RABBITMQ_DEFAULT_PASS=guest \
+	  rabbitmq:3-management
 down:
 	docker rm -f $(REDIS_NAME)
 	docker rm -f $(MYSQL_NAME)
+	docker rm -f $(AMQP_NAME)
 redis_logs:
 	docker logs $(REDIS_NAME)
 redis_cli:
@@ -49,4 +62,9 @@ mysql_cli:
 	  -D"$$MYSQL_ENV_MYSQL_DATABASE" \
 	  -u"$$MYSQL_ENV_MYSQL_USER" \
 	  -p"$$MYSQL_ENV_MYSQL_PASSWORD"'
+amqp_cli:
+	docker run -it --link $(AMQP_NAME):rabbit --rm \
+	  -e RABBITMQ_ERLANG_COOKIE='pink5678' \
+	  -e RABBITMQ_NODENAME=rabbit@$(AMQP_NAME) \
+	  rabbitmq:3 bash
 FORCE:
