@@ -1,6 +1,6 @@
 REDIS_NAME        ?= msg-storage-redis
 MYSQL_NAME        ?= msg-storage-mysql
-AMQP_NAME         ?= msg-storage-rabbit
+RABBIT_NAME       ?= msg-storage-rabbit
 
 INIT_SQL=$(shell cat init.sql)
 
@@ -26,8 +26,8 @@ up:
 	  -e MYSQL_PASSWORD=5678 \
 	  mysql:latest
 	docker run -d -p 15672:15672 \
-	  --name $(AMQP_NAME) \
-	  --hostname $(AMQP_NAME) \
+	  --name $(RABBIT_NAME) \
+	  --hostname $(RABBIT_NAME) \
 	  -e RABBITMQ_ERLANG_COOKIE='pink5678' \
 	  -e RABBITMQ_DEFAULT_USER=guest \
 	  -e RABBITMQ_DEFAULT_PASS=guest \
@@ -35,7 +35,7 @@ up:
 down:
 	docker rm -f $(REDIS_NAME)
 	docker rm -f $(MYSQL_NAME)
-	docker rm -f $(AMQP_NAME)
+	docker rm -f $(RABBIT_NAME)
 redis_logs:
 	docker logs $(REDIS_NAME)
 redis_cli:
@@ -62,9 +62,11 @@ mysql_cli:
 	  -D"$$MYSQL_ENV_MYSQL_DATABASE" \
 	  -u"$$MYSQL_ENV_MYSQL_USER" \
 	  -p"$$MYSQL_ENV_MYSQL_PASSWORD"'
-amqp_cli:
-	docker run -it --link $(AMQP_NAME):rabbit --rm \
+rabbit_cli:
+	docker run -it --link $(RABBIT_NAME):rabbit --rm \
 	  -e RABBITMQ_ERLANG_COOKIE='pink5678' \
-	  -e RABBITMQ_NODENAME=rabbit@$(AMQP_NAME) \
+	  -e RABBITMQ_NODENAME=rabbit@$(RABBIT_NAME) \
 	  rabbitmq:3 bash
+rabbit_logs:
+	docker logs $(RABBIT_NAME)
 FORCE:
