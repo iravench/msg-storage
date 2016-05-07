@@ -25,13 +25,14 @@ up:
 	  -e MYSQL_USER=pink \
 	  -e MYSQL_PASSWORD=5678 \
 	  mysql:latest
-	docker run -d -p 15672:15672 \
+	docker run -d -p 15672:15672 -p 5672:5672 \
 	  --name $(RABBIT_NAME) \
 	  --hostname $(RABBIT_NAME) \
 	  -e RABBITMQ_ERLANG_COOKIE='pink5678' \
 	  -e RABBITMQ_DEFAULT_USER=guest \
 	  -e RABBITMQ_DEFAULT_PASS=guest \
 	  rabbitmq:3-management
+	until $(MAKE) mysql_init; do sleep 1s; done
 down:
 	docker rm -f $(REDIS_NAME)
 	docker rm -f $(MYSQL_NAME)
